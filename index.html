@@ -11,7 +11,7 @@
             margin: 0;
         }
         .container {
-            max-width: 400px;
+            max-width: 320px;
             margin: 40px auto;
             background: #fff;
             border-radius: 16px;
@@ -27,22 +27,22 @@
             font-weight: bold;
             color: #333;
         }
-        input[type="number"], input[type="date"] {
+        input[type="number"], input[type="date"], select {
+            font-size: 0.9em;
+            padding: 7px;
             width: 100%;
-            padding: 10px;
             margin: 8px 0 16px 0;
             border-radius: 8px;
             border: 1px solid #bdbdbd;
-            font-size: 1em;
         }
         button {
             background: #388e3c;
             color: #fff;
             border: none;
             border-radius: 8px;
-            padding: 10px 0;
+            padding: 7px 0;
             width: 100%;
-            font-size: 1em;
+            font-size: 0.9em;
             font-weight: bold;
             cursor: pointer;
             margin-bottom: 16px;
@@ -57,10 +57,10 @@
         .money-item {
             background: #e8f5e9;
             border-radius: 8px;
-            padding: 8px 12px;
+            padding: 6px 8px;
             margin-bottom: 8px;
             color: #388e3c;
-            font-size: 1em;
+            font-size: 0.9em;
             position: relative;
         }
         .reduce-box {
@@ -69,19 +69,25 @@
             margin-top: 8px;
         }
         .reduce-box input {
+            font-size: 0.9em;
+            padding: 3px;
             width: 80px;
-            padding: 4px;
             border-radius: 6px;
             border: 1px solid #bdbdbd;
         }
         .reduce-box button {
-            width: auto;
-            padding: 6px 16px;
-            background: #d32f2f;
-            color: #fff;
-            border-radius: 6px;
-            font-size: 0.95em;
-            margin-bottom: 0;
+            font-size: 1em;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: #d32f2f;
+    color: #fff;
+    border-radius: 6px;
+    margin-bottom: 0;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
         }
         .reduce-box button:hover {
             background: #b71c1c;
@@ -92,6 +98,16 @@
             color: #388e3c;
             margin-top: 16px;
         }
+        .saving-total {
+            text-align: right;
+            color: #1976d2;
+            font-weight: bold;
+            margin-bottom: 16px;
+        }
+        table, th, td {
+    font-size: 0.8em;
+    padding: 3px;
+}
         @media (max-width: 500px) {
     .container {
         padding: 16px 4px;
@@ -108,6 +124,9 @@
         font-size: 1em;
         padding: 10px 20px;
     }
+    table, th, td {
+        font-size: 1.2em;
+    }
 }
     </style>
 </head>
@@ -117,40 +136,108 @@
         <label for="date">วันที่:</label>
         <input type="date" id="date">
         <label for="amount">จำนวนเงินที่เก็บ (บาท):</label>
-        <input type="number" id="amount" min="1" placeholder="เช่น 100">
+        <input type="number" id="amount" min="1" placeholder="เช่น 1">
+        <label for="type">ประเภท:</label>
+<select id="type">
+    <option value="รับ">รายรับ</option>
+    <option value="จ่าย">รายจ่าย</option>
+</select>
         <button onclick="addMoney()">บันทึกเงิน</button>
         <div class="money-list" id="moneyList"></div>
         <div class="total" id="totalMoney">รวมทั้งหมด: 0 บาท</div>
+        
+        <!-- ส่วนของเงินเก็บ -->
+        <label for="saving">จำนวนเงินเก็บ (บาท):</label>
+        <input type="number" id="saving" min="1" placeholder="เช่น 1">
+        <button onclick="addSaving()">เงินเก็บ</button>
+        <div class="saving-total" id="savingTotal" style="text-align:right; color:#1976d2; font-weight:bold; margin-bottom:16px;">เงินเก็บทั้งหมด: 0 บาท</div>
+        
+        <h2 style="text-align:center; color:#388e3c; margin-top:32px;">ตารางการใช้เงิน</h2>
+<table id="moneyTable" style="width:100%; border-collapse:collapse; margin-top:12px;">
+    <thead>
+        <tr style="background:#388e3c; color:#fff;">
+            <th style="padding:8px; border:1px solid #bdbdbd;">วันที่</th>
+            <th style="padding:8px; border:1px solid #bdbdbd;">จำนวนเงิน (บาท)</th>
+            <th style="padding:8px; border:1px solid #bdbdbd;">ประเภท</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+<label for="image">เลือกรูปภาพ:</label>
+<input type="file" id="image" accept="image/*">
     </div>
     <script>
         let moneyArr = JSON.parse(localStorage.getItem('moneyArr') || '[]');
+        let savingArr = JSON.parse(localStorage.getItem('savingArr') || '[]');
+
         function addMoney() {
             const amount = document.getElementById('amount').value;
             const date = document.getElementById('date').value;
+            const type = document.getElementById('type').value;
+            const imageInput = document.getElementById('image');
             if (amount && amount > 0 && date) {
-                moneyArr.push({amount: Number(amount), date: date});
-                localStorage.setItem('moneyArr', JSON.stringify(moneyArr));
-                updateList();
-                document.getElementById('amount').value = '';
-                document.getElementById('date').value = '';
+                if (imageInput.files && imageInput.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        moneyArr.push({
+                            amount: Number(amount),
+                            date: date,
+                            type: type,
+                            image: e.target.result // base64
+                        });
+                        localStorage.setItem('moneyArr', JSON.stringify(moneyArr));
+                        updateList();
+                        document.getElementById('amount').value = '';
+                        document.getElementById('date').value = '';
+                        imageInput.value = '';
+                    };
+                    reader.readAsDataURL(imageInput.files[0]);
+                } else {
+                    moneyArr.push({
+                        amount: Number(amount),
+                        date: date,
+                        type: type,
+                        image: null
+                    });
+                    localStorage.setItem('moneyArr', JSON.stringify(moneyArr));
+                    updateList();
+                    document.getElementById('amount').value = '';
+                    document.getElementById('date').value = '';
+                }
             }
         }
+
         function updateList() {
             const list = document.getElementById('moneyList');
             list.innerHTML = '';
             moneyArr.forEach((m, i) => {
                 list.innerHTML += `
                 <div class="money-item">
-                    วันที่ ${m.date} : ${m.amount} บาท
+                    วันที่ ${m.date} : ${m.amount} บาท (${m.type})
+                    ${m.image ? `<img src="${m.image}" alt="รูป" style="width:60px; height:60px; object-fit:cover; border-radius:8px; margin:6px 0;">` : ''}
                     <div class="reduce-box">
                         <input type="number" id="reduce-${i}" min="1" placeholder="จำนวนที่ลด">
                         <button onclick="reduceMoney(${i})">ลด</button>
                     </div>
                 </div>`;
             });
-            const total = moneyArr.reduce((a, b) => a + b.amount, 0);
+            const total = moneyArr.reduce((a, b) => a + (b.type === "รับ" ? b.amount : -b.amount), 0);
             document.getElementById('totalMoney').innerText = `รวมทั้งหมด: ${total} บาท`;
+
+            // สร้างตารางการใช้เงิน
+            const tableBody = document.querySelector('#moneyTable tbody');
+            tableBody.innerHTML = '';
+            moneyArr.forEach(m => {
+                tableBody.innerHTML += `
+                    <tr>
+                        <td style="padding:8px; border:1px solid #bdbdbd;">${m.date}</td>
+                        <td style="padding:8px; border:1px solid #bdbdbd;">${m.amount}</td>
+                        <td style="padding:8px; border:1px solid #bdbdbd;">${m.type}</td>
+                    </tr>
+                `;
+            });
         }
+
         function reduceMoney(index) {
             const reduceInput = document.getElementById('reduce-' + index);
             const reduceAmount = Number(reduceInput.value);
@@ -163,7 +250,54 @@
                 updateList();
             }
         }
+
+        function addSaving() {
+            const saving = document.getElementById('saving').value;
+            if (saving && saving > 0) {
+                savingArr.push(Number(saving));
+                localStorage.setItem('savingArr', JSON.stringify(savingArr));
+                updateSaving();
+                document.getElementById('saving').value = '';
+            }
+        }
+
+        function updateSaving() {
+            const savingTotalDiv = document.getElementById('savingTotal');
+            const totalSaving = savingArr.reduce((a, b) => a + b, 0);
+            let html = `เงินเก็บทั้งหมด: ${totalSaving} บาท`;
+            // แสดงรายการเงินเก็บแต่ละรายการพร้อมช่องกรอกและปุ่มลด
+            if (savingArr.length > 0) {
+                html += '<div style="margin-top:8px;">';
+                savingArr.forEach((s, i) => {
+                    html += `<div style="background:#e3f2fd; color:#1976d2; border-radius:6px; margin-bottom:4px; padding:6px 10px;">
+                                ครั้งที่ ${i+1}: ${s} บาท 
+                                <input type="number" id="reduce-saving-${i}" min="1" placeholder="จำนวนที่ลด" style="width:80px; margin-left:8px;">
+                                <button onclick="reduceSaving(${i})" 
+    style="background:#d32f2f; color:#fff; border:none; border-radius:4px; width:28px; height:28px; padding:0; margin-left:4px; cursor:pointer; font-size:1em; display:inline-flex; align-items:center; justify-content:center;">
+    ลด
+</button>
+                            </div>`;
+                });
+                html += '</div>';
+            }
+            savingTotalDiv.innerHTML = html;
+        }
+
+        function reduceSaving(index) {
+            const reduceInput = document.getElementById('reduce-saving-' + index);
+            const reduceAmount = Number(reduceInput.value);
+            if (reduceAmount && reduceAmount > 0) {
+                savingArr[index] -= reduceAmount;
+                if (savingArr[index] <= 0) {
+                    savingArr.splice(index, 1);
+                }
+                localStorage.setItem('savingArr', JSON.stringify(savingArr));
+                updateSaving();
+            }
+        }
+
         updateList();
+updateSaving(); // <-- เพิ่มบรรทัดนี้
     </script>
 </body>
 </html>
