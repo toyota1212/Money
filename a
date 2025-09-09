@@ -162,8 +162,9 @@
                 localStorage.setItem('moneyArr', JSON.stringify(moneyArr));
                 updateList();
             }
-        }
+        }                           
         updateList();
     </script>
 </body>
+
 </html>
